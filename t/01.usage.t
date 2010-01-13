@@ -11,7 +11,7 @@ plan skip_all => 'set TEST_APACHE2_MOJO to run tests against http://localhost/mo
 
 eval "use Mojo";
 my $test_addr = 0;
-if (not $@ and $Mojo::VERSION >= 0.9002) {
+if (not $@ and $Mojo::VERSION >= 0.999914) {
     $test_addr = 1;
     # this needs a patched Mojo::HelloWorld
     plan tests => 5;

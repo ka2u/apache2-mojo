@@ -1,4 +1,5 @@
 package Apache2::Mojo;
+our $VERSION = '0.004';
 
 use strict;
 use warnings;
@@ -31,8 +32,12 @@ sub _app {
         Mojo::Loader->reload;
         $_app = undef;
     }
-    $_app ||= Mojo::Loader->load_build($ENV{MOJO_APP} || 'Mojo::HelloWorld');
-    return $_app;
+    my $e = $_app;
+    my $app_class = $ENV{MOJO_APP} ||= 'Mojo::HelloWorld';
+    if ($e = Mojo::Loader->load($app_class)){
+        die $e if ref $e;
+    }
+    return $app_class->new;
 }
 
 sub handler {
@@ -40,7 +45,7 @@ sub handler {
 
     # call _app() only once (because of MOJO_RELOAD)
     my $app = _app;
-    my $tx  = $app->build_tx;
+    my $tx  = $app->build_tx_cb->($app);
 
     # Transaction
     _transaction($r, $tx);
@@ -143,16 +148,14 @@ sub _response {
     # headers
     $res->fix_headers;
     my $headers = $res->headers;
-    foreach my $key (@{$headers->names}) {
-        my @value = $headers->header($key);
-        next unless @value;
-
-        # special treatment for content-type
-        if ($key eq 'Content-Type') {
-            $r->content_type($value[0]);
-        } else {
-            $r->headers_out->set($key => shift @value);
-            $r->headers_out->add($key => $_) foreach (@value);
+    foreach my $name (@{$headers->names}) {
+        for my $value ($headers->header($name)) {
+            my $val = shift @{$value};
+            if ($name eq 'Content-Type') {
+                $r->content_type($val);
+            } else {
+                $r->headers_out->set($name => $val);
+            }
         }
     }
 
@@ -198,6 +201,10 @@ __END__
 =head1 NAME
 
 Apache2::Mojo - mod_perl2 handler for Mojo
+
+=head1 VERSION
+
+version 0.004
 
 =head1 SYNOPSIS
 
