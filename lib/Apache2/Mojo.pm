@@ -131,10 +131,8 @@ sub _request {
     # body
     $req->state('content');
     $req->content->state('body');
-    my $offset = 0;
     while (!$req->is_finished) {
-        last unless (my $read = $r->read(my $buffer, 4096, $offset));
-        $offset += $read;
+        last unless (my $read = $r->read(my $buffer, 4096, 0));
         $req->parse($buffer);
     }
 }
